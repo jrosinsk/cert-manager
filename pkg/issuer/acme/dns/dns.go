@@ -34,6 +34,7 @@ import (
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/clouddns"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/cloudflare"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/digitalocean"
+	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/dyndns"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/rfc2136"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/route53"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/util"
@@ -59,6 +60,7 @@ type dnsProviderConstructors struct {
 	acmeDNS      func(host string, accountJson []byte, dns01Nameservers []string) (*acmedns.DNSProvider, error)
 	rfc2136      func(nameserver, tsigAlgorithm, tsigKeyName, tsigSecret string, dns01Nameservers []string) (*rfc2136.DNSProvider, error)
 	digitalOcean func(token string, dns01Nameservers []string) (*digitalocean.DNSProvider, error)
+	dynDNS       func(dynCustomerName, dynUsername, dynPassword, dynZoneName string, dns01Nameservers []string) (*dyndns.DNSProvider, error)
 }
 
 // Solver is a solver for the acme dns01 challenge.
@@ -162,6 +164,30 @@ func (s *Solver) solverForChallenge(issuer v1alpha1.GenericIssuer, ch *v1alpha1.
 
 	var impl solver
 	switch {
+	case providerConfig.DynDNS != nil:
+		dynPassword, err := s.loadSecretData(&providerConfig.DynDNS.DynPassword, resourceNamespace)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "error getting dyn password")
+		}
+		dynUsername, err := s.loadSecretData(&providerConfig.DynDNS.DynUsername, resourceNamespace)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "error getting dyn username")
+		}
+
+		dynCustomerName, err := s.loadSecretData(&providerConfig.DynDNS.DynCustomerName, resourceNamespace)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "error getting dyn customer name")
+		}
+
+		impl, err = s.dnsProviderConstructors.dynDNS(
+			string(dynCustomerName),
+			string(dynUsername),
+			string(dynPassword),
+			providerConfig.DynDNS.DynZoneName,
+			s.DNS01Nameservers)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "error instantiating Dyn challenge solver")
+		}
 	case providerConfig.Akamai != nil:
 		clientToken, err := s.loadSecretData(&providerConfig.Akamai.ClientToken, resourceNamespace)
 		if err != nil {
@@ -350,6 +376,7 @@ func NewSolver(ctx *controller.Context) *Solver {
 			acmedns.NewDNSProviderHostBytes,
 			rfc2136.NewDNSProviderCredentials,
 			digitalocean.NewDNSProviderCredentials,
+			dyndns.NewDNSProvider,
 		},
 	}
 }

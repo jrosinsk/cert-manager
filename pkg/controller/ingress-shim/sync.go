@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
@@ -141,6 +142,27 @@ func (c *Controller) validateIngress(ing *extv1beta1.Ingress) []error {
 	return errs
 }
 
+// Remove Top Level name and Add WildCard
+//  ie: blah.foo.com  ->  *.foo.com
+func getWildcardHosts(certHosts []string) []string {
+	if certHosts == nil && len(certHosts) >= 0 {
+		return certHosts
+	}
+	hostList := make([]string, len(certHosts))
+	for i, t := range certHosts {
+		hostList[i] = "*" + t[strings.IndexByte(t, '.'):]
+	}
+	return hostList
+}
+
+func getSafeName(unSafeName string) string {
+	safeName := unSafeName
+	if len(unSafeName) > 63 {
+		safeName = unSafeName[:63]
+	}
+	return safeName
+}
+
 func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.GenericIssuer, issuerKind string) (new, update []*v1alpha1.Certificate, _ error) {
 	var newCrts []*v1alpha1.Certificate
 	var updateCrts []*v1alpha1.Certificate
@@ -150,6 +172,8 @@ func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.
 			return nil, nil, err
 		}
 
+		hostsWithWildcard := getWildcardHosts(tls.Hosts)
+
 		crt := &v1alpha1.Certificate{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            tls.SecretName,
@@ -157,7 +181,7 @@ func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.
 				OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(ing, ingressGVK)},
 			},
 			Spec: v1alpha1.CertificateSpec{
-				DNSNames:   tls.Hosts,
+				DNSNames:   hostsWithWildcard,
 				SecretName: tls.SecretName,
 				IssuerRef: v1alpha1.ObjectReference{
 					Name: issuer.GetObjectMeta().Name,
@@ -183,7 +207,7 @@ func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.
 
 			updateCrt := existingCrt.DeepCopy()
 
-			updateCrt.Spec.DNSNames = tls.Hosts
+			updateCrt.Spec.DNSNames = hostsWithWildcard
 			updateCrt.Spec.SecretName = tls.SecretName
 			updateCrt.Spec.IssuerRef.Name = issuer.GetObjectMeta().Name
 			updateCrt.Spec.IssuerRef.Kind = issuerKind
@@ -255,8 +279,10 @@ func (c *Controller) setIssuerSpecificConfig(crt *v1alpha1.Certificate, issuer v
 		if !ok {
 			challengeType = c.defaults.acmeIssuerChallengeType
 		}
+		domainsWithWildcard := getWildcardHosts(tls.Hosts)
+
 		domainCfg := v1alpha1.DomainSolverConfig{
-			Domains: tls.Hosts,
+			Domains: domainsWithWildcard,
 		}
 		switch challengeType {
 		case "http01":

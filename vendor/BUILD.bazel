@@ -95,6 +95,7 @@ filegroup(
         "//vendor/github.com/miekg/dns:all-srcs",
         "//vendor/github.com/mitchellh/go-homedir:all-srcs",
         "//vendor/github.com/mitchellh/mapstructure:all-srcs",
+        "//vendor/github.com/nesv/go-dynect/dynect:all-srcs",
         "//vendor/github.com/onsi/ginkgo:all-srcs",
         "//vendor/github.com/onsi/gomega:all-srcs",
         "//vendor/github.com/openshift/generic-admission-server/pkg/apiserver:all-srcs",

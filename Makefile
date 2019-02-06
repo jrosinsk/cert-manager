@@ -124,9 +124,9 @@ generate:
 	bazel run //hack:update-bazel
 	bazel run //hack:update-gofmt
 	bazel run //hack:update-codegen
-	bazel run //hack:update-deploy-gen
-	bazel run //hack:update-reference-docs
-	bazel run //hack:update-deps
+#	bazel run //hack:update-deploy-gen
+#	bazel run //hack:update-reference-docs
+#	bazel run //hack:update-deps
 
 # Docker targets
 ################
