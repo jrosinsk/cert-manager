@@ -18,6 +18,7 @@ package v1alpha1
 
 const (
 	AltNamesAnnotationKey   = "certmanager.k8s.io/alt-names"
+	IPSANAnnotationKey      = "certmanager.k8s.io/ip-sans"
 	CommonNameAnnotationKey = "certmanager.k8s.io/common-name"
 	IssuerNameAnnotationKey = "certmanager.k8s.io/issuer-name"
 	IssuerKindAnnotationKey = "certmanager.k8s.io/issuer-kind"
@@ -47,10 +48,11 @@ type LocalObjectReference struct {
 	// Name of the referent.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 	// TODO: Add other useful fields. apiVersion, kind, uid?
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
 
-// ObjectReference is a reference to an object with a given name and kind.
+// ObjectReference is a reference to an object. If the namespace field is set,
+// it is assumed to be in a namespace
 type ObjectReference struct {
 	Name string `json:"name"`
 	Kind string `json:"kind,omitempty"`
@@ -64,7 +66,7 @@ const (
 
 type SecretKeySelector struct {
 	// The name of the secret in the pod's namespace to select from.
-	LocalObjectReference `json:",inline"`
+	LocalObjectReference `json:",inline" protobuf:"bytes,1,opt,name=localObjectReference"`
 	// The key of the secret to select from.  Must be a valid secret key.
-	Key string `json:"key"`
+	Key string `json:"key" protobuf:"bytes,2,opt,name=key"`
 }

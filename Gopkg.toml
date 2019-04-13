@@ -8,6 +8,8 @@ required = [
   "github.com/onsi/ginkgo/ginkgo",
 ]
 
+ignored = ["github.com/jrosinsk/cert-manager/pkg/issuer/acme/dns/dyndns"]
+
 [[constraint]]
   name = "k8s.io/api"
   version = "kubernetes-1.10.12"

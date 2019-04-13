@@ -18,6 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+
 RULE_NAME="deps"
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..

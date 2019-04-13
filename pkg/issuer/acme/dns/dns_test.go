@@ -30,6 +30,7 @@ import (
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/acmedns"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/cloudflare"
 	"github.com/jetstack/cert-manager/pkg/issuer/acme/dns/util"
+	"github.com/jrosinsk/cert-manager/pkg/issuer/acme/dns/dyndns"
 )
 
 func newIssuer(name, namespace string, configs []v1alpha1.ACMEIssuerDNS01Provider) *v1alpha1.Issuer {

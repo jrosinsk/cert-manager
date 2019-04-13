@@ -1,7 +1,12 @@
 name: webhook
 apiVersion: v1
+<<<<<<< HEAD
 version: "v0.6.4"
 appVersion: "v0.6.2"
+=======
+version: "v0.6.3"
+appVersion: "v0.6.1"
+>>>>>>> cert-manager-0.6.1
 description: A Helm chart for deploying the cert-manager webhook component
 home: https://github.com/jetstack/cert-manager
 sources:

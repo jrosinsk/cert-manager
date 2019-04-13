@@ -171,6 +171,7 @@ type ACMEIssuerDNS01Provider struct {
 	DigitalOcean *ACMEIssuerDNS01ProviderDigitalOcean `json:"digitalocean,omitempty"`
 	AcmeDNS      *ACMEIssuerDNS01ProviderAcmeDNS      `json:"acmedns,omitempty"`
 	RFC2136      *ACMEIssuerDNS01ProviderRFC2136      `json:"rfc2136,omitempty"`
+	DynDNS       *ACMEIssuerDNS01ProviderDynDNS       `json:"dyndns,omitempty"`
 }
 
 // CNAMEStrategy configures how the DNS01 provider should handle CNAME records
@@ -190,6 +191,15 @@ const (
 	// subdomain to some other, less privileged domain.
 	FollowStrategy = "Follow"
 )
+
+// ACMEIssuerDNS01ProviderDynDNS is a structure containing the DNS
+// configuration for DynDNS DNS—Zone Record Management API
+type ACMEIssuerDNS01ProviderDynDNS struct {
+	DynUsername     SecretKeySelector `json:"clientTokenSecretRef"`
+	DynPassword     SecretKeySelector `json:"clientSecretSecretRef"`
+	DynCustomerName SecretKeySelector `json:"accessTokenSecretRef"`
+	DynZoneName     string            `json:"dynzonename"`
+}
 
 // ACMEIssuerDNS01ProviderAkamai is a structure containing the DNS
 // configuration for Akamai DNS—Zone Record Management API
