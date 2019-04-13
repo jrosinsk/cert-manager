@@ -47,6 +47,7 @@ const (
 type solver interface {
 	Present(domain, fqdn, value string) error
 	CleanUp(domain, fqdn, value string) error
+	//	Timeout() (timeout, interval time.Duration)
 }
 
 // dnsProviderConstructors defines how each provider may be constructed.
@@ -183,8 +184,9 @@ func (s *Solver) solverForChallenge(issuer v1alpha1.GenericIssuer, ch *v1alpha1.
 			string(dynCustomerName),
 			string(dynUsername),
 			string(dynPassword),
-			providerConfig.DynDNS.DynZoneName,
-			s.DNS01Nameservers)
+			string(providerConfig.DynDNS.DynZoneName),
+			s.DNS01Nameservers,
+		)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "error instantiating Dyn challenge solver")
 		}

@@ -1,5 +1,19 @@
-// Package azuredns implements a DNS provider for solving the DNS-01 challenge
-// using Azure DNS.
+/*
+Copyright 2019 The Jetstack cert-manager contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package dyndns
 
 import (
@@ -69,7 +83,8 @@ func errorOrValue(err error, value interface{}) interface{} {
 // Present creates a TXT record using the specified parameters
 func (c *DNSProvider) Present(domain, token, keyAuth string) error {
 	glog.V(4).Infof("creating a new dyndns record: %s, token: %s, keyAuth: %s\n", domain, token, keyAuth)
-	fqdn, value, ttl, err := util.DNS01Record(domain, keyAuth, nil, false)
+
+	fqdn, value, ttl, err := util.DNS01Record(domain, keyAuth, c.dns01Nameservers, false)
 
 	if err != nil {
 		glog.Errorf("error %v", err)
@@ -85,7 +100,7 @@ func (c *DNSProvider) createRecord(fqdn, value string, ttl int) error {
 	recordData := dynect.DataBlock{}
 	recordData.TxtData = value
 	record := dynect.RecordRequest{
-		TTL:   "60",
+		TTL:   "30",
 		RData: recordData,
 	}
 
@@ -107,8 +122,8 @@ func (c *DNSProvider) createRecord(fqdn, value string, ttl int) error {
 
 // CleanUp removes the TXT record matching the specified parameters
 func (c *DNSProvider) CleanUp(domain, token, keyAuth string) error {
-	glog.Infof("creating a new dyndns record: %s, token: %s, keyAuth: %s\n", domain, token, keyAuth)
-	fqdn, _, _, err := util.DNS01Record(domain, keyAuth, nil, false)
+	glog.Infof("getting dyndns record: %s, token: %s, keyAuth: %s\n", domain, token, keyAuth)
+	fqdn, _, _, err := util.DNS01Record(domain, keyAuth, c.dns01Nameservers, false)
 	link := fmt.Sprintf("%sRecord/%s/%s/", "TXT", c.zoneName, fqdn)
 	glog.Infof("deleting record: %s", link)
 	response := dynect.RecordResponse{}

@@ -155,58 +155,45 @@ func getWildcardHosts(certHosts []string) []string {
 	return hostList
 }
 
-func getSafeName(unSafeName string) string {
-	safeName := unSafeName
-	if len(unSafeName) > 63 {
-		safeName = unSafeName[:63]
-	}
-	return safeName
-}
-
 func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.GenericIssuer, issuerKind string) (new, update []*v1alpha1.Certificate, _ error) {
 	var newCrts []*v1alpha1.Certificate
 	var updateCrts []*v1alpha1.Certificate
-	for _, tls := range ing.Spec.TLS {
-		existingCrt, err := c.certificateLister.Certificates(ing.Namespace).Get(tls.SecretName)
-		if !apierrors.IsNotFound(err) && err != nil {
-			return nil, nil, err
-		}
 
-		hostsWithWildcard := getWildcardHosts(tls.Hosts)
+	tls := ing.Spec.TLS[0]
+	existingCrt, err := c.certificateLister.Certificates(ing.Namespace).Get(tls.SecretName)
+	if !apierrors.IsNotFound(err) && err != nil {
+		return nil, nil, err
+	}
 
-		crt := &v1alpha1.Certificate{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            tls.SecretName,
-				Namespace:       ing.Namespace,
-				OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(ing, ingressGVK)},
+	hostsWithWildcard := getWildcardHosts(tls.Hosts)
+
+	crt := &v1alpha1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            tls.SecretName,
+			Namespace:       ing.Namespace,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(ing, ingressGVK)},
+		},
+		Spec: v1alpha1.CertificateSpec{
+			DNSNames:   hostsWithWildcard,
+			SecretName: tls.SecretName,
+			IssuerRef: v1alpha1.ObjectReference{
+				Name: issuer.GetObjectMeta().Name,
+				Kind: issuerKind,
 			},
-			Spec: v1alpha1.CertificateSpec{
-				DNSNames:   hostsWithWildcard,
-				SecretName: tls.SecretName,
-				IssuerRef: v1alpha1.ObjectReference{
-					Name: issuer.GetObjectMeta().Name,
-					Kind: issuerKind,
-				},
-			},
-		}
+		},
+	}
 
-		err = c.setIssuerSpecificConfig(crt, issuer, ing, tls)
-		if err != nil {
-			return nil, nil, err
-		}
+	err = c.setIssuerSpecificConfig(crt, issuer, ing, tls)
+	if err != nil {
+		return nil, nil, err
+	}
 
-		// check if a Certificate for this TLS entry already exists, and if it
-		// does then skip this entry
-		if existingCrt != nil {
-			glog.Infof("Certificate %q for ingress %q already exists", tls.SecretName, ing.Name)
-
-			if !certNeedsUpdate(existingCrt, crt) {
-				glog.Infof("Certificate %q for ingress %q is up to date", tls.SecretName, ing.Name)
-				continue
-			}
-
+	// check if a Certificate for this TLS entry already exists, and if it
+	// does then skip this entry if it doesn't need updating.
+	if existingCrt != nil {
+		glog.Infof("Certificate %q for ingress %q already exists", tls.SecretName, ing.Name)
+		if certNeedsUpdate(existingCrt, crt) {
 			updateCrt := existingCrt.DeepCopy()
-
 			updateCrt.Spec.DNSNames = hostsWithWildcard
 			updateCrt.Spec.SecretName = tls.SecretName
 			updateCrt.Spec.IssuerRef.Name = issuer.GetObjectMeta().Name
@@ -217,8 +204,10 @@ func (c *Controller) buildCertificates(ing *extv1beta1.Ingress, issuer v1alpha1.
 			}
 			updateCrts = append(updateCrts, updateCrt)
 		} else {
-			newCrts = append(newCrts, crt)
+			glog.Infof("Certificate %q for ingress %q is up to date", tls.SecretName, ing.Name)
 		}
+	} else {
+		newCrts = append(newCrts, crt)
 	}
 	return newCrts, updateCrts, nil
 }

@@ -18,6 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+
 # This script should be run via `bazel run //hack:update-deps`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY:-"$(cd "$(dirname "$0")" && pwd -P)"/..}
 runfiles="$(pwd)"

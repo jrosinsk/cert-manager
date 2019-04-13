@@ -553,6 +553,14 @@
   revision = "00c29f56e2386353d58c599509e8dc3801b0d716"
 
 [[projects]]
+  digest = "1:4198694dc1a0dd3ec5efb0acae7921ae057288220b9725ec2c51de5e29e215ea"
+  name = "github.com/nesv/go-dynect"
+  packages = ["dynect"]
+  pruneopts = "UT"
+  revision = "cdd946344b54bdf7dbeac406c2f1fe93150f08ea"
+  version = "v0.6.0"
+
+[[projects]]
   digest = "1:9422368b1aa123a27f1c4d12b63a7d70bc503f3ce7022931ae4881e29ea275b9"
   name = "github.com/onsi/ginkgo"
   packages = [
@@ -1425,6 +1433,7 @@
     "github.com/hashicorp/vault/helper/certutil",
     "github.com/kr/pretty",
     "github.com/miekg/dns",
+    "github.com/nesv/go-dynect/dynect",
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/config",
     "github.com/onsi/ginkgo/ginkgo",
